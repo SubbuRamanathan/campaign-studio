@@ -21,6 +21,9 @@ next-env.d.ts
 # Vercel
 .vercel
 
+# eve local runtime state (dev server, workflow data, sandbox cache, eval output)
+.eve/
+
 # logs
 npm-debug.log*
 yarn-debug.log*
