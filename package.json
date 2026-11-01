@@ -1,0 +1,39 @@
+{
+  "name": "campaign-studio",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "setup:ui": "shadcn add https://blok.sitecore.com/r/theme.json https://blok.sitecore.com/r/button.json https://blok.sitecore.com/r/badge.json https://blok.sitecore.com/r/skeleton.json https://blok.sitecore.com/r/alert.json https://blok.sitecore.com/r/tabs.json"
+  },
+  "dependencies": {
+    "@mdi/js": "^7.4.47",
+    "@sitecore-marketplace-sdk/client": "^0.4.1",
+    "@sitecore-marketplace-sdk/xmc": "^0.4.4",
+    "@vercel/oidc": "^4.0.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "eve": "0.86.0",
+    "next": "^16.0.0",
+    "radix-ui": "^1.8.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.7.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "shadcn": "^3.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.9.0"
+  }
+}
