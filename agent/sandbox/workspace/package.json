@@ -2,5 +2,5 @@
   "name": "campaign-renderer",
   "private": true,
   "type": "module",
-  "dependencies": { "playwright": "1.56.1" }
+  "dependencies": { "playwright": "1.64.1" }
 }

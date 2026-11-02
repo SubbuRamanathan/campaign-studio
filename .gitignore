@@ -21,6 +21,10 @@ next-env.d.ts
 # Vercel
 .vercel
 
+# eve build output
+.output
+.nitro
+
 # eve local runtime state (dev server, workflow data, sandbox cache, eval output)
 .eve/
 

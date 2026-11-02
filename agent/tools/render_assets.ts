@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 
+const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const MAX_BYTES = 1_500_000; // tool outputs are stored with the session: keep them small
 
 export default defineTool({
@@ -10,7 +11,15 @@ export default defineTool({
     "inside the sandbox. Returns a layout report: overflowing slides and email width.",
   inputSchema: z.object({
     pageTitle: z.string().max(120),
-    brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+    theme: z
+      .object({
+        primary: hex.describe("Brand color: first and last slides, accents"),
+        background: hex.optional().describe("Background of the middle slides"),
+        text: hex.optional().describe("Text color on the middle slides"),
+        font: z.enum(["sans", "serif"]).optional(),
+      })
+      .optional()
+      .describe("The design theme. Leave out when neither the brand kit nor the page gave a color."),
     slides: z.array(z.object({ headline: z.string().max(80), body: z.string().max(240) })).min(3).max(8),
     emailHtml: z.string().max(40_000),
   }),
