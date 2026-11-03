@@ -1,6 +1,7 @@
 "use client";
 
 import { ClientSDK, type ApplicationContext } from "@sitecore-marketplace-sdk/client";
+import { AI } from "@sitecore-marketplace-sdk/ai";
 import { XMC } from "@sitecore-marketplace-sdk/xmc";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
@@ -14,7 +15,7 @@ export function MarketplaceProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>({ client: null, appContext: null, error: null });
 
   useEffect(() => {
-    sdk ??= ClientSDK.init({ target: window.parent, modules: [XMC] });
+    sdk ??= ClientSDK.init({ target: window.parent, modules: [XMC, AI] });
     sdk
       .then(async (client) => {
         const { data } = await client.query("application.context");
