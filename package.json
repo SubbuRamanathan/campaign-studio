@@ -13,6 +13,7 @@
     "setup:ui": "shadcn add https://blok.sitecore.com/r/theme.json https://blok.sitecore.com/r/button.json https://blok.sitecore.com/r/badge.json https://blok.sitecore.com/r/skeleton.json https://blok.sitecore.com/r/alert.json https://blok.sitecore.com/r/tabs.json"
   },
   "dependencies": {
+    "@auth0/nextjs-auth0": "^4.33.0",
     "@mdi/js": "^7.4.47",
     "@sitecore-marketplace-sdk/ai": "^0.1.3",
     "@sitecore-marketplace-sdk/client": "^0.4.1",

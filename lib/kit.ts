@@ -19,8 +19,7 @@ export const kitRequest = z.object({
   text: z.string().min(200, "The page needs more text to repurpose.").max(20_000),
   /** Set when the page address could not be confirmed as the public one; shown in the review notes. */
   urlWarning: z.string().max(400).optional(),
-  /** Where to read the brand kit from (see lib/brand-kit.ts). Both are checked, as they go into API paths. */
-  organizationId: z.string().regex(/^org_[A-Za-z0-9]+$/).optional(),
+  /** The site's brand kit, read on the server (see lib/brand-kit.ts). Checked, as it goes into an API path. */
   brandKitId: z.string().regex(/^[0-9a-f-]{32,36}$/i).optional(),
   /** The site's accent color, read from the page. Used when the brand kit gives none. */
   brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),

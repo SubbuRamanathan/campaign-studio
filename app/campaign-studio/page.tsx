@@ -105,7 +105,7 @@ export default function CampaignStudio() {
   const [revising, setRevising] = useState(false); // applying brand feedback; the kit on screen is the old one
   const [result, setResult] = useState<Result | null>(null);
   const [status, setStatus] = useState<"idle" | "working">("idle");
-  const [message, setMessage] = useState<{ kind: "error" | "ok"; text: string } | null>(null);
+  const [message, setMessage] = useState<{ kind: "error" | "ok"; text: string; signIn?: string } | null>(null); // signIn: organization id for the sign-in button
   const [brand, setBrand] = useState<Partial<Record<AssetKey, BrandCheck>>>({});
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const reviewed = useRef(new Map<AssetKey, string>()); // text last sent to Brand Review, per asset
@@ -269,14 +269,16 @@ export default function CampaignStudio() {
       const { url, warning: urlWarning } = await pageAddress(source.url);
       if (!url) throw new Error("This page has no public address: its site has no hostname or rendering host set in SitecoreAI and the page has no usable canonical link.");
 
-      // The server reads the brand kit itself, so it needs to know which kit and organization.
-      const organizationId = ((await client.query("host.state")).data as { organizationId?: string } | undefined)?.organizationId;
-
       const response = await fetch("/api/campaign", {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...source, url, urlWarning, brandKitId: brandKitId || undefined, organizationId, revise, recheck }),
+        headers: { "content-type": "application/json", ...(contextId ? { "x-sitecore-contextid": contextId } : {}) },
+        body: JSON.stringify({ ...source, url, urlWarning, brandKitId: brandKitId || undefined, revise, recheck }),
       });
+      if (response.status === 401) {
+        // The server reads the brand kit as the signed-in Sitecore user. Sign-in needs a click, as browsers block pop-ups otherwise.
+        const organizationId = ((await client.query("host.state")).data as { organizationId?: string } | undefined)?.organizationId;
+        throw Object.assign(new Error("Sign in to Sitecore so the app can read the site's brand kit, then run it again."), { signIn: organizationId ?? "" });
+      }
       if (!response.ok || !response.body) throw new Error((await response.json().catch(() => null))?.error ?? "Request failed.");
 
       // Read the NDJSON progress stream from the agent run.
@@ -314,7 +316,7 @@ export default function CampaignStudio() {
     } catch (err) {
       // Keep any draft on screen, but say plainly that it was never fully checked.
       setResult((r) => (r ? { ...r, stage: "unchecked" } : r));
-      setMessage({ kind: "error", text: errorText(err) });
+      setMessage({ kind: "error", text: errorText(err), signIn: (err as { signIn?: string }).signIn });
     } finally {
       setStatus("idle");
       setRevising(false);
@@ -387,7 +389,16 @@ export default function CampaignStudio() {
         </Collapsible>
       )}
 
-      {message && <Alert variant={message.kind === "error" ? "danger" : "success"}><AlertDescription>{message.text}</AlertDescription></Alert>}
+      {message && (
+        <Alert variant={message.kind === "error" ? "danger" : "success"}>
+          <AlertDescription>{message.text}</AlertDescription>
+          {message.signIn !== undefined && (
+            <Button variant="outline" className="col-start-2 mt-2 justify-self-start" onClick={() => window.open(`/auth/login?returnTo=/signed-in${message.signIn ? `&organization=${message.signIn}` : ""}`, "_blank")}>
+              Sign in to Sitecore
+            </Button>
+          )}
+        </Alert>
+      )}
 
       {kit && (
         <Collapsible tone={checksTone} open={checksOpen} onToggle={() => setChecksOpen((o) => !o)} title={checksTitle}>
@@ -411,7 +422,7 @@ export default function CampaignStudio() {
           <div className="flex gap-2">
             {feedback && (
               <Button variant="outline" className="flex-1" onClick={() => createKit({ revise: { kit, feedback } })} disabled={busy || edited.length > 0}>
-                Apply brand feedback to all tabs
+                Apply brand feedback
               </Button>
             )}
             <Button variant={edited.length > 0 ? "default" : "outline"} className="flex-1" onClick={() => createKit({ recheck: kit })} disabled={busy || !pageId}>

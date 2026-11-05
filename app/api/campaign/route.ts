@@ -1,5 +1,6 @@
 import { getVercelOidcToken } from "@vercel/oidc";
 import { Client } from "eve/client";
+import { auth0 } from "@/lib/auth0";
 import { brandKitText } from "@/lib/brand-kit";
 import { foreignLinks, kitRequest, kitSchema, type Kit, type StreamEvent } from "@/lib/kit";
 import { DEFAULT_MODEL } from "@/lib/model";
@@ -20,9 +21,8 @@ const LABELS: Record<string, string> = {
 const wrap = (tag: string, text: string) => `<${tag}>\n${text.replace(new RegExp(`</?${tag}>`, "gi"), "")}\n</${tag}>`;
 
 export async function POST(req: Request) {
-  // Built-in Marketplace auth gives the server no Sitecore identity to verify, so this
-  // route only accepts same-origin calls from the panel. Add a Vercel Firewall rate
-  // limit for demos; for production use Sitecore custom authorization (Auth0).
+  // Only same-origin calls from the panel. The brand kit needs a signed-in Sitecore user (Auth0).
+  // Add a Vercel Firewall rate limit for demos.
   const origin = new URL(req.url).origin;
   if (req.headers.get("origin") !== origin) return new Response("Forbidden", { status: 403 });
 
@@ -35,9 +35,19 @@ export async function POST(req: Request) {
   let brandKit = "";
   let voiceSections: string[] = [];
   let kitNote: string | undefined;
-  if (page.organizationId && page.brandKitId) {
+  if (page.brandKitId) {
+    // The kit is read as the signed-in Sitecore user, so it is only what that user may see.
+    if (!(await auth0.getSession())) {
+      return Response.json({ error: "Sign in to Sitecore to read the site's brand kit.", signIn: true }, { status: 401 });
+    }
     try {
-      ({ text: brandKit, voiceSections } = await brandKitText(page.organizationId, page.brandKitId));
+      const contextId = req.headers.get("x-sitecore-contextid");
+      if (!contextId) throw new Error("missing x-sitecore-contextid header on /api/campaign");
+      ({ text: brandKit, voiceSections } = await brandKitText(
+        (await auth0.getAccessToken()).token,
+        contextId,
+        page.brandKitId,
+      ));
     } catch (err) {
       kitNote = `The brand kit could not be read (${err instanceof Error ? err.message : "unknown error"}), so the content was written without its voice and visual rules.`;
     }
