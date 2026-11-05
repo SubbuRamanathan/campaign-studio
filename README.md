@@ -10,10 +10,10 @@ layout, and lets the agent fix overflowing slides before the author sees anythin
 
 ```
 SitecoreAI Page builder
-  └─ iframe: /campaign-studio                 Marketplace SDK, built-in auth
+  └─ iframe: /campaign-studio                 Marketplace SDK, built-in auth + Auth0 sign-in for the server
        ├─ xmc.agent.pagesGetPageHtml          read the open page (client-side)
        ├─ POST /api/campaign                  same-origin only, streams drafts + progress
-       │    ├─ Brand Management API           reads the whole brand kit (voice rules, visual identity)
+       │    ├─ Agent API (brand kits)         reads the whole brand kit as the signed-in user
        │    └─ eve Client + Vercel OIDC  ──►  /eve/v1  (agent/, same deployment)
        │         ├─ lead agent via AI Gateway AGENT_MODEL: plan, assemble the kit
        │         ├─ subagents/social_ads_writer   LinkedIn, short post, ads   ┐ the three
@@ -119,8 +119,7 @@ last one should return 429. Tighten the limit if your authors share few IP addre
   protection bypass for automation.
 - **Secrets:** keep model keys (BYOK) in the AI Gateway dashboard, never in `NEXT_PUBLIC_*`
   variables, which are bundled into the browser. Scope variables per environment, and never commit
-  `.env.local`. The Stream credential is server-only and can read every brand kit in your
-  organization, so create it just for this app and rotate it if it leaks.
+  `.env.local`. The Auth0 client secret is server-only, so rotate it if it leaks.
 - **Models:** the agents are read at build time, so redeploy after changing `*_MODEL` or the
   provider variables. Pin `eve` (it is in public preview) and upgrade on purpose.
 - **Data:** to keep page content with one provider, set `AGENT_PROVIDER_ONLY`; Gateway then never
@@ -144,14 +143,16 @@ In the Sitecore Cloud Portal, open **App studio** and create a custom app:
    ignored. If the site has no hostname, the canonical link (made absolute) is used, then the
    rendering host URL, and the review notes warn about it. Links in the finished kit that point
    to a different host than the page are also listed in the review notes.
-   The server reads the whole brand kit (every section and subsection) through the Brand
-   Management API, which needs a Stream credential: `SITECORE_AI_CLIENT_ID` and
-   `SITECORE_AI_CLIENT_SECRET`, from **Stream → Admin → AI APIs keys → Create credential**. The app
-   finds the organization itself. The lead agent reads the kit: Tone of Voice and the other voice
+   The server reads the whole brand kit (every section and subsection) through the Agent API as
+   the signed-in Sitecore user, which needs custom authorization: create a **Regular web app**
+   client credential in App Studio, set `AUTH0_*` and `APP_BASE_URL` (see `.env.example`), and add
+   `<APP_BASE_URL>/auth/callback` to the allowed callback URLs (and the base URL to the logout,
+   origin and web origin URLs). The first run shows a **Sign in to Sitecore** button, which opens
+   the sign-in in a new window. The lead agent reads the kit: Tone of Voice and the other voice
    sections become the writing rules for every writer and the brand editor, and Visual Guidelines
    and Image Style become the design theme (primary, background and text colors, serif or sans)
    for the carousel and email. The sandbox enforces a 4.5:1 text contrast on the carousel whatever
-   colors the model picks. Without the credential, or when the kit cannot be read, the content is
+   colors the model picks. When the kit cannot be read, the content is
    written without brand rules, the design uses the page's `theme-color` (or a `--brand`,
    `--primary` or `--accent` CSS variable), and with none a dark neutral. The review notes say when
    the kit could not be read.
